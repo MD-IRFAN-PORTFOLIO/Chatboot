@@ -11,3 +11,4 @@ python-multipart
 passlib[bcrypt]
 httpx
 python-jose[cryptography]
+certifi

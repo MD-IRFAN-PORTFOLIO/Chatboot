@@ -1,13 +1,15 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
+import certifi
 
 load_dotenv()
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "chatbot_db")
 
-client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=2000)
+ca = certifi.where()
+client = AsyncIOMotorClient(MONGODB_URL, serverSelectionTimeoutMS=2000, tlsCAFile=ca)
 database = client[DATABASE_NAME]
 
 # Collections
