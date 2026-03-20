@@ -10,4 +10,4 @@ Pillow
 python-multipart
 passlib[bcrypt]
 httpx
-pyjwt
+python-jose[cryptography]
