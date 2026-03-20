@@ -57,6 +57,8 @@ async def debug_paths():
         "/app/frontend_dist"
     ]
     found_path = next((p for p in potential_paths if os.path.exists(p)), "NOT_FOUND")
+    
+    admin_exists = os.path.exists(os.path.join(found_path, "admin.html")) if found_path != "NOT_FOUND" else False
 
     return {
         "status": "online",
@@ -68,8 +70,17 @@ async def debug_paths():
         "cwd": os.getcwd(),
         "base_dir": BASE_DIR,
         "frontend_path": found_path,
+        "admin_html_exists": admin_exists,
         "cwd_files": os.listdir(".")
     }
+
+# ==========================================
+# REDIRECTS & SPECIAL ROUTES
+# ==========================================
+
+@app.get("/admin")
+async def admin_redirect():
+    return RedirectResponse(url="/admin.html")
 
 # ==========================================
 # STARTUP LOGIC
@@ -96,6 +107,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_PATH = os.path.join(BASE_DIR, "frontend_dist") if os.path.exists(os.path.join(BASE_DIR, "frontend_dist")) else os.path.join(os.path.dirname(BASE_DIR), "frontend")
 
 if os.path.exists(FRONTEND_PATH):
+    # Explicitly serve admin.html if requested directly
+    @app.get("/admin.html")
+    async def get_admin_page():
+        from fastapi.responses import FileResponse
+        return FileResponse(os.path.join(FRONTEND_PATH, "admin.html"))
+
     app.mount("/", StaticFiles(directory=FRONTEND_PATH, html=True), name="frontend")
 else:
     @app.get("/")
