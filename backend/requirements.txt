@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+motor
+pymongo
+python-dotenv
+pydantic
+pydantic-settings
+PyPDF2
+Pillow
+python-multipart
+passlib[bcrypt]
+httpx
+pyjwt

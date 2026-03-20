@@ -1,0 +1,12 @@
+.venv/
+backend/venv/
+.env
+__pycache__/
+*.pyc
+.vscode/
+.git/
+.gitignore
+*.log
+backend/static/uploads/*
+!backend/static/uploads/.gitkeep
+frontend/node_modules/ # If any exist later

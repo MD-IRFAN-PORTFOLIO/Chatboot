@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura AI | Neural Interface</title>
+
+    <!-- Modern Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #A556FB;
+            --primary-glow: rgba(165, 86, 251, 0.5);
+            --secondary: #00d2ff;
+            --secondary-glow: rgba(0, 210, 255, 0.4);
+            --sidebar-bg: #08080c;
+            --main-bg: #030308;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8f8f2;
+            --text-dim: #9494b8;
+            --font-main: 'Plus+Jakarta+Sans', sans-serif;
+            --font-heading: 'Space+Grotesk', sans-serif;
+            --transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--main-bg);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            perspective: 1200px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- OPTIMIZED BACKGROUND & 3D --- */
+        .bg-fx {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+            contain: strict;
+            background: radial-gradient(circle at 50% 50%, #050510 0%, #020205 100%);
+        }
+
+        .particles {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            pointer-events: none;
+            animation: floatParticle 25s infinite linear;
+            will-change: transform;
+        }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+
+            100% {
+                transform: translate3d(100px, -100px, 0);
+            }
+        }
+
+        .grid-layer {
+            position: absolute;
+            inset: -100%;
+            background-image:
+                linear-gradient(rgba(165, 86, 251, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(165, 86, 251, 0.05) 1px, transparent 1px);
+            background-size: 80px 80px;
+            transform: rotateX(45deg) translate3d(0, 0, 0);
+            mask-image: radial-gradient(circle at center, black, transparent 70%);
+            opacity: 0.4;
+            will-change: transform;
+        }
+
+        .orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(140px);
+            opacity: 0.15;
+            animation: orbFloat 25s infinite alternate ease-in-out;
+            will-change: transform;
+            pointer-events: none;
+        }
+
+        .orb-1 {
+            background: var(--primary);
+            top: -15%;
+            right: -10%;
+        }
+
+        .orb-2 {
+            background: var(--secondary);
+            bottom: -15%;
+            left: -10%;
+            animation-delay: -7s;
+        }
+
+        @keyframes orbFloat {
+            from {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+
+            to {
+                transform: translate3d(60px, 30px, 0) scale(1.1);
+            }
+        }
+
+        .prism {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(5px);
+            transform-style: preserve-3d;
+            animation: rotatePrism 20s infinite linear;
+            box-shadow: 0 0 20px rgba(165, 86, 251, 0.1);
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+
+        .prism-1 {
+            top: 20%;
+            left: 10%;
+            width: 60px;
+            height: 60px;
+            animation-duration: 15s;
+        }
+
+        .prism-2 {
+            bottom: 25%;
+            right: 15%;
+            width: 80px;
+            height: 80px;
+            animation-duration: 25s;
+        }
+
+        @keyframes rotatePrism {
+            from {
+                transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+            }
+
+            to {
+                transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg);
+            }
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 300px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 100;
+            transition: var(--transition);
+            contain: layout;
+        }
+
+        .new-chat-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 14px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 32px;
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .new-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--primary-glow);
+        }
+
+        .history-item {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .history-item:hover,
+        .history-item.active {
+            background: rgba(165, 86, 251, 0.1);
+            color: white;
+            text-shadow: 0 0 8px var(--primary-glow);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 10;
+            contain: layout;
+        }
+
+        .app-header {
+            height: 70px;
+            padding: 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--glass-border);
+            background: rgba(3, 3, 8, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.4rem;
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        /* Messages Area */
+        .chat-view {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 24px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .message-container {
+            max-width: 850px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        .welcome-screen h2 {
+            font-family: var(--font-heading);
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            background: linear-gradient(to right, #fff, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .suggestion-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+
+        .suggestion-card:hover {
+            border-color: var(--primary);
+            background: rgba(165, 86, 251, 0.08);
+            transform: translateZ(20px) rotateX(4deg);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4), 0 0 20px var(--primary-glow);
+        }
+
+        /* Chat Bubbles */
+        .msg-row {
+            display: flex;
+            width: 100%;
+            gap: 16px;
+            animation: msgIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes msgIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .msg-row.user {
+            justify-content: flex-end;
+        }
+
+        .msg-bubble {
+            max-width: 85%;
+            padding: 18px 24px;
+            border-radius: 24px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
+        .msg-row.bot .msg-bubble {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-row.user .msg-bubble {
+            background: linear-gradient(135deg, var(--primary), #8a2be2);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 10px 30px var(--primary-glow);
+        }
+
+        /* File Upload Chip */
+        .file-preview-chip {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: rgba(165, 86, 251, 0.15);
+            border: 1px solid var(--primary);
+            padding: 8px 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            width: fit-content;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        /* Input Bar */
+        .input-wrapper {
+            padding: 32px;
+            background: linear-gradient(to top, var(--main-bg) 80%, transparent);
+        }
+
+        .input-bar {
+            max-width: 850px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 12px 12px 12px 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .input-bar:focus-within {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 40px var(--primary-glow);
+        }
+
+        .input-bar input {
+            flex: 1;
+            background: none;
+            border: none;
+            color: white;
+            outline: none;
+            font-size: 1.1rem;
+            padding: 12px 0;
+        }
+
+        .action-btn {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .typing-indicator {
+            display: none;
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -300px;
+                height: 100%;
+                visibility: hidden;
+            }
+
+            .sidebar.active {
+                left: 0;
+                visibility: visible;
+            }
+
+            .suggestion-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-screen h2 {
+                font-size: 2.2rem;
+            }
+
+            .prism,
+            .orb {
+                display: none;
+            }
+
+            /* Disable heavy FX on small mobile screens */
+        }
+
+        /* Premium Table Styles */
+        .msg-bubble table {
+            width: 100%;
+            min-width: 500px;
+            /* Ensure content doesn't squash */
+            border-collapse: collapse;
+            margin: 15px 0;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(10px);
+        }
+
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin: 15px 0;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-wrapper table {
+            margin: 0;
+            border: none;
+        }
+
+        .msg-bubble th {
+            background: linear-gradient(to bottom, rgba(165, 86, 251, 0.2), rgba(165, 86, 251, 0.1));
+            color: var(--secondary);
+            padding: 14px 18px;
+            font-weight: 700;
+            text-align: left;
+            border-bottom: 2px solid var(--glass-border);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .msg-bubble td {
+            padding: 12px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            vertical-align: top;
+        }
+
+        .msg-bubble tr:last-child td {
+            border-bottom: none;
+        }
+
+        .msg-bubble tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .msg-bubble ul,
+        .msg-bubble ol {
+            margin: 10px 0 10px 20px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+        }
+
+        .msg-bubble li {
+            margin-bottom: 6px;
+        }
+
+        .msg-bubble li::marker {
+            color: var(--primary);
+        }
+
+        /* Download Link Card Style */
+        .download-link-card {
+            background: linear-gradient(135deg, rgba(165, 86, 251, 0.1) 0%, rgba(0, 210, 255, 0.1) 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            max-width: 320px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: cardFadeIn 0.5s ease-out;
+            border-left: 3px solid var(--secondary);
+        }
+
+        .download-link-card:hover {
+            border-color: var(--secondary);
+            background: linear-gradient(135deg, rgba(165, 86, 251, 0.15) 0%, rgba(0, 210, 255, 0.15) 100%);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(0, 210, 255, 0.2);
+        }
+
+        .download-link-card i {
+            color: var(--secondary);
+            filter: drop-shadow(0 0 5px var(--secondary-glow));
+        }
+
+        .download-link-card .info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .download-link-card .info .title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: white;
+        }
+
+        .download-link-card .info .action {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        @keyframes cardFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Profile Modal Style */
+        .profile-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.82);
+            backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .profile-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 40px rgba(165, 86, 251, 0.2);
+            position: relative;
+        }
+
+        .profile-card h3 {
+            color: var(--secondary);
+            margin-bottom: 25px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .profile-card .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .profile-card label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .profile-card input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: white;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .profile-card input:focus {
+            border-color: var(--secondary);
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.1);
+        }
+
+        .profile-card .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .profile-card .btn-save {
+            flex: 2;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-card .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px var(--secondary-glow);
+        }
+
+        .profile-card .btn-cancel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 12px;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .profile-card .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .faculty-card {
+            background: rgba(165, 86, 251, 0.05);
+            border: 1px solid rgba(165, 86, 251, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 15px 0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            animation: cardFadeIn 0.4s ease-out;
+        }
+
+        .faculty-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid var(--secondary);
+            box-shadow: 0 0 15px rgba(165, 86, 251, 0.3);
+        }
+
+        .faculty-info h3 {
+            margin: 0 0 5px 0;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .faculty-info .post {
+            color: var(--secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .faculty-info .qual {
+            color: #00ff88;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .faculty-info .about {
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 480px) {
+            .faculty-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* --- LOGIN OVERLAY --- */
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 5000;
+            background: linear-gradient(135deg, rgba(8, 8, 12, 0.95), rgba(3, 3, 8, 0.98));
+            backdrop-filter: blur(40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 32px;
+            width: 90%;
+            max-width: 440px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.5), 0 0 30px var(--primary-glow);
+            animation: cardScaleIn 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        @keyframes cardScaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            margin: 0 auto 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 25px var(--primary-glow);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .login-card h1 {
+            font-family: var(--font-heading);
+            font-size: 1.8rem;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .login-card p.subtitle {
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        .login-type-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .login-type-btn {
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            background: none;
+            color: var(--text-dim);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .login-type-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .login-card .input-group {
+            margin-bottom: 18px;
+            text-align: left;
+        }
+
+        .login-card label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+            margin-left: 12px;
+        }
+
+        .login-card input,
+        .login-card select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 14px 20px;
+            border-radius: 16px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .login-card input:focus,
+        .login-card select:focus {
+            border-color: var(--secondary);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 15px var(--secondary-glow);
+        }
+
+        .login-card select option {
+            background: #111;
+            color: white;
+        }
+
+        .guest-access {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px 0;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .guest-access input {
+            width: auto;
+            accent-color: var(--primary);
+        }
+
+        .init-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(90deg, #A556FB, #00d2ff);
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0, 210, 255, 0.2);
+        }
+
+        .init-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 210, 255, 0.3);
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Neural Login Overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <i data-lucide="bot" size="40" color="white"></i>
+            </div>
+            <h1>System Login</h1>
+            <p class="subtitle">MANUU Polytechnic Bengaluru</p>
+
+            <div class="login-type-toggle">
+                <button class="login-type-btn active" onclick="Aura.setLoginType('student', this)">
+                    <i data-lucide="user"></i> Student
+                </button>
+                <button class="login-type-btn" onclick="Aura.setLoginType('staff', this)">
+                    <i data-lucide="briefcase"></i> Staff
+                </button>
+            </div>
+
+            <form id="loginForm" onsubmit="Aura.initializeSession(event)">
+                <div id="studentFields">
+                    <div class="input-group">
+                        <label>Enrollment Number</label>
+                        <input type="text" id="loginEnrollment" placeholder="e.g. 21001" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="input-group">
+                            <label>Branch</label>
+                            <select id="loginBranch">
+                                <option value="CSE">CSE</option>
+                                <option value="ECE">ECE</option>
+                                <option value="CIVIL">CIVIL</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Semester</label>
+                            <select id="loginSemester">
+                                <option value="1">1st Sem</option>
+                                <option value="2">2nd Sem</option>
+                                <option value="3">3rd Sem</option>
+                                <option value="4" selected>4th Sem</option>
+                                <option value="5">5th Sem</option>
+                                <option value="6">6th Sem</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="staffFields" style="display: none;">
+                    <div class="input-group">
+                        <label>Username / ID</label>
+                        <input type="text" id="loginUsername" placeholder="Enter Staff ID">
+                    </div>
+                    <div class="input-group">
+                        <label>Department</label>
+                        <select id="loginDept">
+                            <option value="CSE">CSE</option>
+                            <option value="ECE">ECE</option>
+                            <option value="CIVIL">CIVIL</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Access Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+
+                <label class="guest-access">
+                    <input type="checkbox" id="guestAccess">
+                    3-Month Guest Access
+                </label>
+
+                <button type="submit" class="init-btn">
+                    <i data-lucide="zap"></i> Initialize Session
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="bg-fx">
+        <div class="grid-layer" id="gridLayer"></div>
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="prism prism-1" id="prism1"></div>
+        <div class="prism prism-2" id="prism2"></div>
+    </div>
+
+    <aside class="sidebar" id="sidebar">
+        <button class="new-chat-btn" onclick="Aura.reset()">
+            <i data-lucide="sparkles"></i> NEW SEQUENCE
+        </button>
+        <div class="history-list">
+            <div class="history-item active"><i data-lucide="activity" size="16"></i> Active Interface</div>
+            <div class="history-item"><i data-lucide="database" size="16"></i> Logic Synthesis</div>
+            <div class="history-item"><i data-lucide="cpu" size="16"></i> Neural Core v1.5</div>
+        </div>
+        <div
+            style="margin-top: auto; padding-top: 20px; border-top: 1px solid var(--glass-border); display: flex; align-items: center; gap: 12px;">
+            <div id="userProfilePhoto"
+                style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; box-shadow: 0 0 15px var(--primary-glow); overflow: hidden; background-size: cover; background-position: center;">
+            </div>
+            <div style="flex: 1;">
+                <p id="userProfileName" style="font-size: 0.9rem; font-weight: 700;">MI ARCHITECT</p>
+                <p style="font-size: 0.7rem; color: var(--primary);">SYSTEM LEVEL 9</p>
+            </div>
+            <i data-lucide="settings" size="18" style="color: var(--text-dim); cursor: pointer;"
+                onclick="Aura.openProfileSettings()"></i>
+            <i data-lucide="log-out" size="18" style="color: #ff3366; cursor: pointer;" onclick="Aura.logout()"
+                title="Terminate Session"></i>
+        </div>
+    </aside>
+
+    <main class="main-stage">
+        <header class="app-header">
+            <div class="logo-area"><i data-lucide="zap" fill="var(--primary)" color="var(--primary)"></i> AURA AI</div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+            </div>
+        </header>
+
+        <section class="chat-view" id="chatView">
+            <div class="message-container" id="msgContainer">
+                <div class="welcome-screen" id="welcomeScreen">
+                    <h2>WELCOME TO CHATBOT</h2>
+                    <p style="color: var(--text-dim); font-size: 1.1rem; margin-bottom: 40px;">Hello! I'm your Chatbot. How can I help you today.</p>
+                    <div class="suggestion-grid">
+                        <div class="suggestion-card" onclick="Aura.suggest('What is my timetable today?')">
+                            <p style="font-weight: 700; color: var(--primary); margin-bottom: 6px;">TIMETABLE SYNTHESIS
+                            </p>
+                            <p style="font-size: 0.85rem; color: var(--text-dim);">Access your neural class schedule and
+                                timings.</p>
+                        </div>
+                        <div class="suggestion-card"
+                            onclick="Aura.suggest('I have a doubt in my subject, can you explain?')">
+                            <p style="font-weight: 700; color: var(--secondary); margin-bottom: 6px;">ACADEMIC
+                                ASSISTANCE</p>
+                            <p style="font-size: 0.85rem; color: var(--text-dim);">Resolve complex academic queries
+                                through Aura AI.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div style="max-width: 850px; margin: 0 auto; width: 100%; padding: 0 32px;">
+            <div class="file-preview-chip" id="filePreview">
+                <img id="imgPreview"
+                    style="display:none; width:30px; height:30px; border-radius:5px; object-fit:cover;">
+                <i data-lucide="file-text" size="14" id="fileIcon"></i>
+                <span id="fileName">document.pdf</span>
+                <i data-lucide="x" size="14" style="cursor:pointer;" onclick="Aura.clearFile()"></i>
+            </div>
+            <div class="typing-indicator" id="typingIndicator">NEURAL PROCESSING...</div>
+        </div>
+
+        <footer class="input-wrapper">
+            <div class="input-bar">
+                <input type="file" id="fileInput" style="display: none;" onchange="Aura.handleFile(this)">
+                <i data-lucide="paperclip" size="22" style="color: var(--text-dim); cursor: pointer;"
+                    onclick="document.getElementById('fileInput').click()"></i>
+                <input type="text" id="userInput" placeholder="Initialize command sequence..." autocomplete="off">
+                <button class="action-btn" id="sendBtn"><i data-lucide="zap" size="22"></i></button>
+            </div>
+        </footer>
+    </main>
+
+    <div id="profileModal" class="profile-modal">
+        <div class="profile-card">
+            <h3>Profile Synthesis</h3>
+            <div class="input-group">
+                <label>Cybernetic Handle (Name)</label>
+                <input type="text" id="profileNameInput" placeholder="Enter identification...">
+            </div>
+            <div class="input-group">
+                <label>Neural Avatar (Photo)</label>
+                <input type="file" id="profileImageInput" accept="image/*">
+            </div>
+            <div class="actions">
+                <button class="btn-cancel" onclick="Aura.closeProfileSettings()">Abort</button>
+                <button class="btn-save" onclick="Aura.saveProfile()">Update Neural ID</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const Aura = {
+            selectedFile: null,
+            mousePos: { x: 0, y: 0 },
+            conversationHistory: [],
+
+            config: {
+                backendBaseUrl: "http://127.0.0.1:8000",
+                backendUrl: "http://127.0.0.1:8000/chat",
+                isDemo: false
+            },
+
+            session: null,
+
+            init() {
+                // Check for existing session
+                const savedSession = localStorage.getItem('aura_session');
+                if (savedSession) {
+                    this.session = JSON.parse(savedSession);
+                    document.getElementById('loginOverlay').style.display = 'none';
+                    this.updateUIWithSession();
+                }
+
+                this.loadProfile();
+
+                const input = document.getElementById('userInput');
+                const btn = document.getElementById('sendBtn');
+
+                input.addEventListener('keypress', (e) => { if (e.key === 'Enter') this.send(); });
+                btn.addEventListener('click', () => this.send());
+
+                this.createParticles();
+
+                // Optimized Parallax with requestAnimationFrame
+                document.addEventListener('mousemove', (e) => {
+                    this.mousePos.x = (window.innerWidth / 2 - e.pageX) / 80;
+                    this.mousePos.y = (window.innerHeight / 2 - e.pageY) / 80;
+                });
+
+                this.animateParallax();
+                input.focus();
+            },
+
+            createParticles() {
+                const container = document.querySelector('.bg-fx');
+                for (let i = 0; i < 40; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'particle';
+                    const size = Math.random() * 2 + 1;
+                    p.style.width = size + 'px';
+                    p.style.height = size + 'px';
+                    p.style.left = Math.random() * 100 + '%';
+                    p.style.top = Math.random() * 100 + '%';
+                    p.style.animationDelay = Math.random() * 25 + 's';
+                    p.style.opacity = Math.random() * 0.4;
+                    container.appendChild(p);
+                }
+            },
+
+            setLoginType(type, btn) {
+                document.querySelectorAll('.login-type-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                if (type === 'student') {
+                    document.getElementById('studentFields').style.display = 'block';
+                    document.getElementById('staffFields').style.display = 'none';
+                } else {
+                    document.getElementById('studentFields').style.display = 'none';
+                    document.getElementById('staffFields').style.display = 'block';
+                }
+            },
+
+            initializeSession(e) {
+                e.preventDefault();
+                const type = document.querySelector('.login-type-btn.active').innerText.trim().toLowerCase();
+
+                let sessionData = { type };
+
+                if (type === 'student') {
+                    sessionData.id = document.getElementById('loginEnrollment').value;
+                    sessionData.branch = document.getElementById('loginBranch').value;
+                    sessionData.semester = document.getElementById('loginSemester').value;
+                } else {
+                    sessionData.id = document.getElementById('loginUsername').value;
+                    sessionData.department = document.getElementById('loginDept').value;
+                }
+
+                this.session = sessionData;
+                localStorage.setItem('aura_session', JSON.stringify(sessionData));
+
+                // Hide overlay with animation
+                const overlay = document.getElementById('loginOverlay');
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                setTimeout(() => overlay.style.display = 'none', 400);
+
+                this.updateUIWithSession();
+                lucide.createIcons();
+            },
+
+            updateUIWithSession() {
+                if (!this.session) return;
+                const nameEl = document.getElementById('userProfileName');
+                const levelEl = nameEl.nextElementSibling;
+
+                if (this.session.type === 'student') {
+                    nameEl.innerText = `ID: ${this.session.id}`;
+                    levelEl.innerText = `${this.session.branch} - SEM ${this.session.semester}`;
+                } else {
+                    nameEl.innerText = this.session.id;
+                    levelEl.innerText = `STAFF - ${this.session.department}`;
+                }
+            },
+
+            animateParallax() {
+                // Smooth interpolation for parallax
+                this.currentParallax.x += (this.mousePos.x - this.currentParallax.x) * 0.1;
+                this.currentParallax.y += (this.mousePos.y - this.currentParallax.y) * 0.1;
+
+                const { x, y } = this.currentParallax;
+
+                // Use transform3d for hardware acceleration
+                document.querySelectorAll('.suggestion-card').forEach(card => {
+                    card.style.transform = `translate3d(0,0,0) rotateY(${x}deg) rotateX(${-y}deg)`;
+                });
+
+                const grid = document.getElementById('gridLayer');
+                if (grid) grid.style.transform = `rotateX(45deg) translate3d(${x * 2}px, ${y * 2}px, 0)`;
+
+                const p1 = document.getElementById('prism1');
+                const p2 = document.getElementById('prism2');
+                if (p1) p1.style.transform = `translate3d(${x * 3}px, ${y * 3}px, 0) rotateX(${x * 10}deg)`;
+                if (p2) p2.style.transform = `translate3d(${x * 6}px, ${y * 6}px, 0) rotateY(${y * 10}deg)`;
+
+                requestAnimationFrame(() => this.animateParallax());
+            },
+
+            handleFile(input) {
+                if (input.files && input.files[0]) {
+                    this.selectedFile = input.files[0];
+                    const img = document.getElementById('imgPreview');
+                    const icon = document.getElementById('fileIcon');
+
+                    if (this.selectedFile.type.startsWith('image/')) {
+                        img.src = URL.createObjectURL(this.selectedFile);
+                        img.style.display = 'block';
+                        icon.style.display = 'none';
+                    } else {
+                        img.style.display = 'none';
+                        icon.style.display = 'block';
+                    }
+
+                    document.getElementById('fileName').textContent = this.selectedFile.name;
+                    document.getElementById('filePreview').style.display = 'flex';
+                    lucide.createIcons();
+                }
+            },
+
+            clearFile() {
+                this.selectedFile = null;
+                document.getElementById('fileInput').value = '';
+                document.getElementById('filePreview').style.display = 'none';
+            },
+
+            suggest(text) {
+                document.getElementById('userInput').value = text;
+                this.send();
+            },
+
+            reset() { location.reload(); },
+
+            async send() {
+                const input = document.getElementById('userInput');
+                const text = input.value.trim();
+                if (!text && !this.selectedFile) return;
+
+                const welcome = document.getElementById('welcomeScreen');
+                if (welcome) welcome.remove();
+
+                let displayMsg = text + (this.selectedFile ? `\n\n📎 **Attached:** ${this.selectedFile.name}` : "");
+                this.appendMessage(displayMsg, 'user');
+
+                input.value = '';
+                const currentFile = this.selectedFile;
+                this.clearFile();
+
+                this.showTyping(true);
+
+                try {
+                    const formData = new FormData();
+                    formData.append('message', text);
+                    if (currentFile) formData.append('file', currentFile);
+
+                    // Add Session Metadata
+                    if (this.session) {
+                        if (this.session.branch) formData.append('branch', this.session.branch);
+                        if (this.session.semester) formData.append('semester', this.session.semester);
+                    }
+
+                    if (this.conversationHistory.length > 0) {
+                        formData.append('history', JSON.stringify(this.conversationHistory));
+                    }
+
+                    const response = await fetch(this.config.backendUrl, { method: 'POST', body: formData });
+
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("text/event-stream")) {
+                        const bubble = this.createEmptyBotMsg();
+                        let fullReply = "";
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder("utf-8");
+
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+                            const chunk = decoder.decode(value);
+                            const lines = chunk.split('\n');
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    try {
+                                        const data = JSON.parse(line.slice(6));
+                                        if (data.text) {
+                                            fullReply += data.text;
+                                            this.updateBotMsg(bubble, fullReply);
+                                        }
+                                    } catch (e) { }
+                                }
+                            }
+                        }
+                        this.conversationHistory.push({ role: 'user', text: text });
+                        this.conversationHistory.push({ role: 'model', text: fullReply });
+                    } else {
+                        const data = await response.json();
+                        this.appendMessage(data.answer, 'bot');
+                        this.conversationHistory.push({ role: 'user', text: text });
+                        this.conversationHistory.push({ role: 'model', text: data.answer });
+                    }
+                } catch (err) {
+                    this.appendMessage("CONNECTION INTERRUPTED.", 'bot');
+                } finally {
+                    this.showTyping(false);
+                }
+            },
+
+            createEmptyBotMsg() {
+                const container = document.getElementById('msgContainer');
+                const row = document.createElement('div');
+                row.className = 'msg-row bot';
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                row.appendChild(bubble);
+                container.appendChild(row);
+                return bubble;
+            },
+
+            updateBotMsg(bubble, text) {
+                let html = this.parseResponse(text);
+                bubble.innerHTML = html;
+                lucide.createIcons();
+                document.getElementById('chatView').scrollTop = document.getElementById('chatView').scrollHeight;
+            },
+
+            appendMessage(text, sender) {
+                const container = document.getElementById('msgContainer');
+                const row = document.createElement('div');
+                row.className = `msg-row ${sender}`;
+                const bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+
+                bubble.innerHTML = this.parseResponse(text, sender === 'bot');
+                row.appendChild(bubble);
+                container.appendChild(row);
+                lucide.createIcons();
+                document.getElementById('chatView').scrollTop = document.getElementById('chatView').scrollHeight;
+            },
+
+            parseResponse(text, isBot = true) {
+                if (isBot && text.includes("DATABASE_FACULTY_CARD:")) {
+                    const parts = text.split("DATABASE_FACULTY_CARD:")[1].split("|");
+                    if (parts.length >= 6) {
+                        const [name, qual, post, dept, about, photo] = parts.map(p => p.trim());
+                        return `
+                            <div class="faculty-card">
+                                <img src="${this.config.backendBaseUrl}${photo}" class="faculty-photo" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=a556fb&color=fff'">
+                                <div class="faculty-info">
+                                    <h3>${name}</h3>
+                                    <div class="post">${post} (${dept})</div>
+                                    <div class="qual">${qual}</div>
+                                    <p class="about">${about}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html = html.replace(/\n/g, '<br>');
+
+                if (isBot) {
+                    // Simple Markdown List detection
+                    html = html.replace(/<br>[\*\-]\s+(.*?)(?=<br>|$)/g, '<li>$1</li>');
+                    html = html.replace(/(<li>.*?<\/li>)/g, '<ul>$1</ul>').replace(/<\/ul><ul>/g, '');
+
+                    // Transform Download Links into Cards
+                    const downloadRegex = /(https?:\/\/[^\s]+?\/chat\/download\/([a-f\d]{24}))/g;
+                    html = html.replace(downloadRegex, (match, url, id) => {
+                        return `<div class="download-link-card" onclick="window.open('${url}', '_blank')">
+                                    <i data-lucide="download"></i>
+                                    <div class="info">
+                                        <span class="title">Document Source Node</span>
+                                        <span class="action">Ready for Extraction</span>
+                                    </div>
+                                </div>`;
+                    });
+
+                    // Simple Table Detection (very basic)
+                    if (html.includes('|')) {
+                        const rows = html.split('<br>');
+                        let inTable = false;
+                        let output = [];
+                        let tableRows = [];
+
+                        rows.forEach(row => {
+                            if (row.trim().startsWith('|') && row.trim().endsWith('|')) {
+                                inTable = true;
+                                const cells = row.split('|').filter(c => c.trim() !== '' || row.indexOf('|') !== row.lastIndexOf('|'));
+                                if (!row.includes('---')) {
+                                    tableRows.push(`<tr>${cells.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`);
+                                }
+                            } else {
+                                if (inTable) {
+                                    output.push(`<div class="table-wrapper"><table>${tableRows.join('')}</table></div>`);
+                                    tableRows = [];
+                                    inTable = false;
+                                }
+                                output.push(row);
+                            }
+                        });
+                        if (inTable) output.push(`<div class="table-wrapper"><table>${tableRows.join('')}</table></div>`);
+                        html = output.join('<br>').replace(/<br><div class="table-wrapper">/g, '<div class="table-wrapper">').replace(/<\/div><br>/g, '</div>');
+                    }
+                }
+                return html;
+            },
+
+            showTyping(show) {
+                document.getElementById('typingIndicator').style.display = show ? 'block' : 'none';
+                document.getElementById('chatView').scrollTop = document.getElementById('chatView').scrollHeight;
+            },
+
+            getDemoReply(input, file) {
+                if (file) return `Neural scan of **${file.name}** complete. Logic integrated.`;
+                return "Sequence complete. Synthesis verified.";
+            },
+
+            openProfileSettings() {
+                document.getElementById('profileModal').style.display = 'flex';
+                document.getElementById('profileNameInput').value = localStorage.getItem('aura_username') || "MI ARCHITECT";
+            },
+
+            closeProfileSettings() {
+                document.getElementById('profileModal').style.display = 'none';
+            },
+
+            saveProfile() {
+                const name = document.getElementById('profileNameInput').value;
+                const fileInput = document.getElementById('profileImageInput');
+
+                if (name) {
+                    localStorage.setItem('aura_username', name);
+                    document.getElementById('userProfileName').innerText = name.toUpperCase();
+                }
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const base64Image = e.target.result;
+                        localStorage.setItem('aura_userphoto', base64Image);
+                        document.getElementById('userProfilePhoto').style.backgroundImage = `url(${base64Image})`;
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                }
+
+                this.closeProfileSettings();
+            },
+
+            loadProfile() {
+                const name = localStorage.getItem('aura_username');
+                const photo = localStorage.getItem('aura_userphoto');
+
+                if (name) {
+                    document.getElementById('userProfileName').innerText = name.toUpperCase();
+                }
+                if (photo) {
+                    document.getElementById('userProfilePhoto').style.backgroundImage = `url(${photo})`;
+                }
+            },
+
+            logout() {
+                if (!confirm("Terminate neural session and clear profile?")) return;
+                localStorage.removeItem('aura_session');
+                location.reload();
+            }
+        };
+
+        window.onload = () => Aura.init();
+    </script>
+</body>
+
+</html>
