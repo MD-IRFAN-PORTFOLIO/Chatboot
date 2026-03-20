@@ -12,3 +12,4 @@ passlib[bcrypt]
 httpx
 python-jose[cryptography]
 certifi
+dnspython
