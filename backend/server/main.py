@@ -1,10 +1,14 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from server.routes import admin, chat
-from server.database import init_db
 from fastapi.staticfiles import StaticFiles
 import os
+import asyncio
+
+# These must be imported after app creation if they use the app, 
+# but here they are standard APIRouters.
+from server.routes import admin, chat
+from server.database import init_db, client
 
 # Ensure static directories exist
 os.makedirs("static/uploads/faculty", exist_ok=True)
@@ -24,56 +28,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
-
 # ==========================================
-# DIAGNOSTIC LOGGING (Visible in Render Logs)
+# HIGH PRIORITY DIAGNOSTIC ROUTES
 # ==========================================
-print("--- STARTING PATH DIAGNOSTICS ---")
-print(f"Current Working Directory: {os.getcwd()}")
-print(f"Files in CWD: {os.listdir('.')}")
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
-print(f"BASE_DIR (calculated from __file__): {BASE_DIR}")
-if os.path.exists(BASE_DIR):
-    print(f"Files in BASE_DIR: {os.listdir(BASE_DIR)}")
-
-potential_paths = [
-    os.path.join(BASE_DIR, "frontend_dist"), 
-    os.path.join(os.path.dirname(BASE_DIR), "frontend"), 
-    "frontend_dist",
-    "../frontend",
-    "/app/frontend_dist"
-]
-
-FRONTEND_PATH = None
-for p in potential_paths:
-    exists = os.path.exists(p)
-    print(f"Checking path '{p}': {'EXISTS' if exists else 'not found'}")
-    if exists and not FRONTEND_PATH:
-        FRONTEND_PATH = p
-
-print(f"FINAL FRONTEND_PATH: {FRONTEND_PATH}")
-print("--- END PATH DIAGNOSTICS ---")
-
-# ==========================================
-# ROUTES
-# ==========================================
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "message": "Backend is running"}
 
 @app.get("/debug-paths")
 async def debug_paths():
     db_status = "Unknown"
     db_error = None
     try:
-        # Quick ping to test DB connection
-        from server.database import client
-        await client.admin.command('ping')
+        # Quick ping to test DB connection (2s timeout)
+        await asyncio.wait_for(client.admin.command('ping'), timeout=2.0)
         db_status = "Connected"
     except Exception as e:
         db_status = "Failed"
         db_error = str(e)
+
+    # Static Path Resolution
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+    potential_paths = [
+        os.path.join(BASE_DIR, "frontend_dist"), 
+        os.path.join(os.path.dirname(BASE_DIR), "frontend"), 
+        "frontend_dist",
+        "/app/frontend_dist"
+    ]
+    found_path = next((p for p in potential_paths if os.path.exists(p)), "NOT_FOUND")
 
     return {
         "status": "online",
@@ -83,28 +66,38 @@ async def debug_paths():
             "url_provided": "YES" if os.getenv("MONGODB_URL") else "NO"
         },
         "cwd": os.getcwd(),
-        "cwd_files": os.listdir("."),
         "base_dir": BASE_DIR,
-        "base_dir_files": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "NOT_FOUND",
-        "frontend_path": FRONTEND_PATH,
-        "is_p_exists": os.path.exists(FRONTEND_PATH) if FRONTEND_PATH else False
+        "frontend_path": found_path,
+        "cwd_files": os.listdir(".")
     }
 
-# Mount API Routers
+# ==========================================
+# STARTUP LOGIC
+# ==========================================
+
+@app.on_event("startup")
+async def on_startup():
+    # Run DB init in background so it doesn't block app startup
+    asyncio.create_task(init_db())
+
+# ==========================================
+# MOUNTING (Order Matters!)
+# ==========================================
+
+# 1. API Routers
 app.include_router(chat.router)
 app.include_router(admin.router)
 
-# Mount static files (Uploading/Faculty Photos)
+# 2. Static Assets (Photos/Uploads)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Mount Frontend files at the root /
-if FRONTEND_PATH:
+# 3. Frontend (Catch-all at the end)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+FRONTEND_PATH = os.path.join(BASE_DIR, "frontend_dist") if os.path.exists(os.path.join(BASE_DIR, "frontend_dist")) else os.path.join(os.path.dirname(BASE_DIR), "frontend")
+
+if os.path.exists(FRONTEND_PATH):
     app.mount("/", StaticFiles(directory=FRONTEND_PATH, html=True), name="frontend")
 else:
     @app.get("/")
     async def root_fallback():
-        return JSONResponse(content={
-            "status": "online",
-            "message": "Backend OK, but Frontend folder missing!",
-            "diagnostics": "/debug-paths"
-        })
+        return {"message": "Backend OK, but Frontend folder missing!", "diagnostics": "/debug-paths"}
