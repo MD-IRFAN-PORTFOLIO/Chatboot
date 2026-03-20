@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from server.routes import admin, chat
 from server.database import init_db
@@ -28,29 +28,66 @@ app.add_middleware(
 async def on_startup():
     await init_db()
 
-# Static Path Resolution
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
-potential_paths = [
-    os.path.join(BASE_DIR, "frontend_dist"), # Docker
-    os.path.join(os.path.dirname(BASE_DIR), "frontend"), # Local
-    "frontend_dist",
-    "../frontend"
-]
-FRONTEND_PATH = next((p for p in potential_paths if os.path.exists(p)), None)
+# ==========================================
+# DIAGNOSTIC LOGGING (Visible in Render Logs)
+# ==========================================
+print("--- STARTING PATH DIAGNOSTICS ---")
+print(f"Current Working Directory: {os.getcwd()}")
+print(f"Files in CWD: {os.listdir('.')}")
 
-# Mount API Routers FIRST
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) 
+print(f"BASE_DIR (calculated from __file__): {BASE_DIR}")
+if os.path.exists(BASE_DIR):
+    print(f"Files in BASE_DIR: {os.listdir(BASE_DIR)}")
+
+potential_paths = [
+    os.path.join(BASE_DIR, "frontend_dist"), 
+    os.path.join(os.path.dirname(BASE_DIR), "frontend"), 
+    "frontend_dist",
+    "../frontend",
+    "/app/frontend_dist"
+]
+
+FRONTEND_PATH = None
+for p in potential_paths:
+    exists = os.path.exists(p)
+    print(f"Checking path '{p}': {'EXISTS' if exists else 'not found'}")
+    if exists and not FRONTEND_PATH:
+        FRONTEND_PATH = p
+
+print(f"FINAL FRONTEND_PATH: {FRONTEND_PATH}")
+print("--- END PATH DIAGNOSTICS ---")
+
+# ==========================================
+# ROUTES
+# ==========================================
+
+@app.get("/debug-paths")
+async def debug_paths():
+    return {
+        "cwd": os.getcwd(),
+        "cwd_files": os.listdir("."),
+        "base_dir": BASE_DIR,
+        "base_dir_files": os.listdir(BASE_DIR) if os.path.exists(BASE_DIR) else "NOT_FOUND",
+        "frontend_path": FRONTEND_PATH,
+        "is_p_exists": os.path.exists(FRONTEND_PATH) if FRONTEND_PATH else False
+    }
+
+# Mount API Routers
 app.include_router(chat.router)
 app.include_router(admin.router)
 
 # Mount static files (Uploading/Faculty Photos)
-# Note: This is mounted at /static
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Mount Frontend files at the root /
-# This ensures index.html is served at the base URL
 if FRONTEND_PATH:
     app.mount("/", StaticFiles(directory=FRONTEND_PATH, html=True), name="frontend")
 else:
     @app.get("/")
-    async def root():
-        return {"message": "Backend Live. Frontend folder not found!"}
+    async def root_fallback():
+        return JSONResponse(content={
+            "status": "online",
+            "message": "Backend OK, but Frontend folder missing!",
+            "diagnostics": "/debug-paths"
+        })
