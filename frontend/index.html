@@ -1116,8 +1116,13 @@
             conversationHistory: [],
 
             config: {
-                backendBaseUrl: "http://127.0.0.1:8000",
-                backendUrl: "http://127.0.0.1:8000/chat",
+                // Auto-detect backend environment
+                backendUrl: (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+                    ? "http://127.0.0.1:8000/chat" 
+                    : "/chat",
+                backendBaseUrl: (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') 
+                    ? "http://127.0.0.1:8000" 
+                    : window.location.origin,
                 isDemo: false
             },
 

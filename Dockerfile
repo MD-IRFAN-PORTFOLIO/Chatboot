@@ -22,5 +22,5 @@ COPY Frontend ./frontend_dist
 # Expose port
 EXPOSE 8080
 
-# Run uvicorn (port 8080 is standard for Cloud Run)
-CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Run uvicorn (Render provides $PORT env var)
+CMD sh -c "uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8080}"
