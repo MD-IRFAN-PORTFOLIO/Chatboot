@@ -16,8 +16,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/server ./server
 COPY backend/static ./static
 
-# Copy Frontend files into a dedicated directory
-COPY Frontend ./frontend_dist
+# Copy frontend files (using lowercase to match filesystem)
+COPY frontend ./frontend_dist
 
 # Expose port
 EXPOSE 8080

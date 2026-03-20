@@ -31,8 +31,8 @@ async def on_startup():
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Mount Frontend files
-if os.path.exists("../Frontend"):
-    app.mount("/ui", StaticFiles(directory="../Frontend", html=True), name="frontend")
+if os.path.exists("../frontend"):
+    app.mount("/ui", StaticFiles(directory="../frontend", html=True), name="frontend")
 elif os.path.exists("frontend_dist"): # For container structure
     app.mount("/ui", StaticFiles(directory="frontend_dist", html=True), name="frontend")
 
