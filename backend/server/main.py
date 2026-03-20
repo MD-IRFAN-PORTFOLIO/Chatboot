@@ -64,7 +64,24 @@ print("--- END PATH DIAGNOSTICS ---")
 
 @app.get("/debug-paths")
 async def debug_paths():
+    db_status = "Unknown"
+    db_error = None
+    try:
+        # Quick ping to test DB connection
+        from server.database import client
+        await client.admin.command('ping')
+        db_status = "Connected"
+    except Exception as e:
+        db_status = "Failed"
+        db_error = str(e)
+
     return {
+        "status": "online",
+        "mongodb": {
+            "status": db_status,
+            "error": db_error,
+            "url_provided": "YES" if os.getenv("MONGODB_URL") else "NO"
+        },
         "cwd": os.getcwd(),
         "cwd_files": os.listdir("."),
         "base_dir": BASE_DIR,
