@@ -24,3 +24,4 @@ EXPOSE 8080
 
 # Run uvicorn (Render provides $PORT env var)
 CMD sh -c "uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8080}"
+# Render Build Fix: 20-03-2026 15:49:51
