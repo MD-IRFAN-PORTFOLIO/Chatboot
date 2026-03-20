@@ -55,6 +55,26 @@ async def register_admin(admin_data: AdminCreate):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.get("/register-quick")
+async def register_admin_quick():
+    """Helper for browser registration during setup"""
+    username = "new_admin"
+    password = "password123"
+    
+    existing_admin = await admin_collection.find_one({"username": username})
+    if existing_admin:
+        return {"status": "already_exists", "message": f"User '{username}' is already in the database."}
+        
+    hashed_password = get_password_hash(password)
+    admin_in_db = AdminInDB(username=username, hashed_password=hashed_password)
+    await admin_collection.insert_one(admin_in_db.model_dump())
+    
+    return {
+        "status": "success", 
+        "message": f"Admin '{username}' registered with password '{password}'",
+        "next_step": "Go to /admin.html and login."
+    }
+
 @router.post("/login", response_model=Token)
 async def login_admin(form_data: OAuth2PasswordRequestForm = Depends()):
     admin = await admin_collection.find_one({"username": form_data.username})
